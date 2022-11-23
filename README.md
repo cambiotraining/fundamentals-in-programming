@@ -1,4 +1,4 @@
-# Course Name
+# Fundamentals in programming
 
 This repository contains the materials for the course.
 
