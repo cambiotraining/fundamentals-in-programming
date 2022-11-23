@@ -1,0 +1,650 @@
+---
+title: "Extended exercise"
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| results: hide
+source(file = "setup-files/setup.R")
+```
+
+```{python}
+#| echo: false
+#| message: false
+import shutup;shutup.please()
+exec(open('setup-files/setup.py').read())
+```
+
+::: {.callout-tip}
+## Learning outcomes
+
+- Be able to read in multiple data files with a common format
+- Combine these in a single data table
+- Use the data for exploration and analysis
+:::
+
+## Libraries and functions
+
+::: {.callout-note collapse="true"}
+## Click to expand
+
+::: {.panel-tabset group="language"}
+## R
+
+### Libraries
+
+```{r}
+#| eval: false
+library(tidyverse)
+library(janitor)
+```
+
+### Functions
+
+## Python
+
+### Libraries
+### Functions
+:::
+:::
+
+## Overview
+
+This practical consists of an extended exercise that will allow you to practice and utilise all of the different skills that we have introduced over the Data Analysis course. It is deliberately designed to replicate a real and realistic piece of work that you might be expected to undertake within your lab. There are two slightly different versions of this exercise:
+
+•	The first utilises data that already in a tidy format and merely requires you to work out a way of combining everything using the tools we’ve already covered.
+
+•	The second starts with the data stored in a common, but distinctly non-tidy format, and will require much more effort to work out a way to get the data into a usable format. It will require use of functions that we haven’t explicitly introduced and so you will have to use Google to find out what they are and how they work. This is a much more realistic situation, and one that you will encounter in your future work and as such I strongly recommend that you at least have a go at this version.
+The versions only differ in the skills you require to get the data into R in the first place and both versions ask you to perform the same analyses on the datasets at the end.
+
+
+## Introduction to exercise
+
+An experiment investigated the effect of diet on the early growth of chicks. A number of chicks were fed one of four different diets and their weight (in g) was measured at birth and then at every other day until day 20. A final measurement was made on day 21.
+
+## Easy option
+
+The data are stored in text files in a directory entitled `data/ext-excercise-easy`. There is one text file for each chick. The format of the data in each text file is the same:
+
+•	each file contains a tidy table with four columns: ID, Diet, Days, Weight
+Create a function that that reads in the data from a single file and stores it in a single R object. The function should:
+•	Accept a single argument (a character string of the file location)
+
+::: {.callout-tip collapse="true"}
+## Answer
+::: {.panel-tabset group="language"}
+## R
+
+### Option 1 - tidyverse based
+
+```{r}
+#| eval: false
+# load libraries
+library(tidyverse)
+```
+
+Create a function that reads in the data:
+
+```{r}
+# create read function ----
+read_chicks <- function(file){
+
+    # Read the data in the file
+    chick_data <- read_delim(file, show_col_types = FALSE)
+
+    # Get the chick ID from the file name
+    chick_name <- file %>% basename() %>% str_remove(".txt")
+
+    # Add data to our table
+    chick_data <- chick_data %>%
+        mutate(chick_name = chick_name)
+
+    # Return the tidy data
+    return(chick_data)
+}
+```
+
+We can check that it's working:
+
+```{r}
+read_chicks("data/ext-exercise-easy/Chick_1.txt")
+```
+
+
+Next, we need to get all the file names:
+
+```{r}
+file_list_easy <- list.files("data/ext-exercise-easy/", full.names = TRUE)
+```
+
+We can check the output with:
+
+```{r}
+head(file_list_easy)
+```
+
+Lastly, we need to combine the two: for each file in the `file_list` we need to apply the `read_chicks()` function.
+
+```{r}
+# create an empty vector list that can hold our data
+chicks <- vector("list", length = length(file_list_easy))
+
+# loop through the files and add to the list
+for(i in seq_along(file_list_easy)){
+    chicks[[i]] <- read_chicks(file_list_easy[i])
+}
+```
+
+We can inspect the `chicks` object:
+
+```{r}
+head(chicks)
+```
+
+This gives us a list with 50 data frames. We can combine these into one large table by doing the following:
+
+```{r}
+all_chicks <- bind_rows(chicks)
+```
+
+We can inspect the object:
+
+```{r}
+head(all_chicks)
+```
+
+To finalise things, we tidy up some of the column names. We can do this manually (with `rename()` for example) or just use `janitor::clean_names()` function (you will have to install and load the `janitor` package for this). We also reorder the columns:
+
+```{r}
+library(janitor)
+
+all_chicks %>% 
+    clean_names()
+```
+
+That looks better, so let's update our object:
+
+```{r}
+all_chicks <- all_chicks %>% 
+    clean_names()
+```
+
+
+## Python
+:::
+:::
+
+## Challenging option
+
+The data are stored in text files in a directory entitled `data/ext-excerise-chal`. There is one text file for each chick. The format of the data in each text file is the same:
+
+•	each file contains information on an individual chick, with Diet, Day and Weight information. The ID of the chick is encoded in the file name. 
+Create a function that that reads in the data from a single file and stores it in a single R object. The function should:
+•	Accept a single argument (a character string of the file location)
+
+::: {.callout-tip collapse="true"}
+## Answer
+::: {.panel-tabset group="language"}
+## R
+
+### Option 1 - tidyverse based
+
+First, if we open one of the files then we can see that the files are composed of the following:
+
+1. Diet; e.g. `Diet: 1`
+2. empty line
+3. a tidy table with Day, Weight columns, space separated
+
+The chick ID is encoded in the filename, so we need to extract that information as well.
+
+First, we create a function that reads in the data:
+
+```{r}
+# create read function ----
+read_chicks <- function(file){
+
+    # Read the data in the file
+    chick_data <- read_delim(file, delim = " ", skip = 1)
+
+    # Get the diet information
+    chick_diet <- read_delim(file, delim = " ",
+               col_names = FALSE,
+               n_max = 1) %>%
+        mutate(diet = parse_number(as.character(.))) %>%
+        select(diet) %>% pull()
+
+    # Get the chick ID from the file name
+    chick_name <- file %>% basename() %>% str_remove(".txt")
+
+    # Add data to our table
+    chick_data <- chick_data %>%
+        mutate(chick_name = chick_name,
+               chick_diet = chick_diet)
+
+    # Return the tidy data
+    return(chick_data)
+}
+```
+
+We can see if this works:
+
+```{r}
+read_chicks("data/ext-exercise-chal/Chick_1.txt")
+```
+
+All good. Next, we need to get the list of files that we want to loop over:
+
+```{r}
+file_list_chal <- list.files("data/ext-exercise-chal/",
+                             full.names = TRUE)
+```
+
+Then we combine the two, we loop over each item in the file list, applying the `read_chicks()` function we created:
+
+```{r}
+#| message: false
+chal_chicks <- vector("list", length = length(file_list_chal))
+
+# loop through the files and add to the list
+for(i in seq_along(file_list_chal)){
+    chal_chicks[[i]] <- read_chicks(file_list_chal[i])
+}
+```
+
+Lastly, we combine the 50 lists into one large data frame:
+
+```{r}
+all_chicks <- bind_rows(chal_chicks)
+```
+
+We can inspect the object as follows:
+
+```{r}
+head(all_chicks)
+```
+Again, to finalise things, we tidy up some of the column names. We can do this manually (with `rename()` for example) or just use `janitor::clean_names()` function (you will have to install and load the `janitor` package for this). We also reorder the columns:
+
+```{r}
+library(janitor)
+
+all_chicks <- all_chicks %>% 
+    clean_names()
+```
+
+### Option 2 - tidyverse based
+
+Get all the file names:
+
+```{r}
+list_of_files <- list.files("data/ext-exercise-chal/",
+                            full.names = TRUE)
+```
+
+Create a table that can hold all the information in the correct format:
+
+```{r}
+all_chicks <- tibble(
+  Day = as.numeric(),
+  Weight = as.numeric(),
+  chick_id = as.character(),
+  diet = as.numeric()
+)
+```
+
+For each file in `list_of_files`, do the following:
+
+1. read the data
+2. get the chick ID
+3. get the diet info
+4. create a table containing the individual data
+5. merge that with the existing data
+
+```{r}
+#| message: false
+for(i in list_of_files){
+  file <- i
+
+  # 1: read the data
+  chick <- read_delim(file, skip = 2)
+  
+  # 2: get the chick ID
+  chick_id <-  file %>% 
+    basename() %>% 
+    str_remove(".txt")
+  
+  # 3: get the diet info
+  diet <- read.table(file, nrows = 1) %>%
+    mutate(diet = str_remove(V1, "Diet:")) %>% 
+    select(-V1) %>%
+    pull() %>%
+    as.numeric()
+  
+  # 4: create a table containing the individual data
+  chick <- chick %>% 
+    mutate(chick_id = chick_id,
+           diet = diet)
+  
+  # 5. merge that with the existing data
+  all_chicks <- bind_rows(all_chicks, chick)
+  
+}
+```
+
+
+```{r}
+head(all_chicks)
+```
+
+Again, to finalise things, we tidy up some of the column names. We can do this manually (with `rename()` for example) or just use `janitor::clean_names()` function (you will have to install and load the `janitor` package for this). We also reorder the columns:
+
+```{r}
+library(janitor)
+
+all_chicks <- all_chicks %>% 
+    clean_names() %>% 
+    select(chick_id, diet, day, weight)
+```
+
+### Option 3 - base R based
+
+We can following the same steps if we wanted to only use base R. We would just have to extract the data slightly differently. For example, testing this on the first file:
+
+```{r}
+diet_data <- read.table("data/ext-exercise-chal/Chick_1.txt",
+                        nrows = 1)
+```
+
+```{r}
+head(diet_data)
+```
+
+We could extract the diet information as follows:
+
+```{r}
+diet <- as.numeric(unlist(strsplit(diet_data$V1, split = "Diet:"))[2])
+```
+
+```{r}
+diet
+```
+
+The rest of the workflow is then the same as for **Option 2 - tidyverse based**.
+
+## Python
+:::
+:::
+
+## Data exploration and querying
+
+Now that we have a complete data set, we can actually use the data and answer some questions.
+
+Let's assume that we stored our data in an object called `all_chicks`, with the following columns:
+
+1. `chick_id`, character column with chick ID
+2. `diet`, numeric column with diet type
+3. `day`, numeric column with day of experiment
+4. `weight`, numeric column with weight measurement
+
+First, we perform a couple of sanity checks:
+
+::: {.panel-tabset group="language"}
+## R
+
+Let's look at the structure our data:
+
+```{r}
+all_chicks %>% head()
+```
+
+That looks good.
+
+We are expecting data for 50 chicks, so let's check that:
+
+```{r}
+all_chicks %>%
+  distinct(chick_id) %>% 
+  count()
+```
+
+Houston, we have 50 chicks!
+
+Next, how many discrete days do we have in our data?
+
+```{r}
+# how many days are in the data
+all_chicks %>% 
+  distinct(day)
+```
+
+Turns out that there are 12 time points, _almost_ in intervals of 2 days...
+
+## Python
+:::
+
+## Exercise: surviving chicks
+
+How many chicks died before the end of the experiment? Create a separate data frame called `survived_chicks` that only includes the data from surviving chicks.
+
+::: {.callout-tip collapse="true"}
+## Answer
+::: {.panel-tabset group="language"}
+## R
+
+To determine which chicks survived, we need to check on a chick-by-chick basis it survived to the maximum duration of the experiment.
+
+In this case, the experiment runs until 21 days, so one way we can tackle this is by creating a new column that contains information on it's survival status (`TRUE` or `FALSE`):
+
+```{r}
+survived_chicks <- all_chicks %>% 
+  # look on a chick-by-chick basis
+  group_by(chick_id) %>% 
+  # create a new column `survived`
+  # if there is a measurement in day 21, state TRUE
+  # otherwise FALSE
+  mutate(survived = if_else(max(day) == 21, TRUE, FALSE)) %>% 
+  # filter out the poor chicks that didn't make it
+  filter(survived == TRUE) %>% 
+  # remove grouping
+  ungroup()
+```
+
+Right, let's see how many chicks made it:
+
+```{r}
+survived_chicks %>% 
+  # get each unique chick
+  distinct(chick_id) %>% 
+  count()
+```
+
+Great, quite a few chicks survived, `r survived_chicks %>% distinct(chick_id) %>% count()` altogether.
+
+## Python
+:::
+:::
+
+## Exercise: data exploration
+
+Do get a better sense of our data, we are going to do some data exploration. I'd like you to do the following:
+
+1. Calculate the mean increase in weight (end weight minus birth weight) for all of the surviving chicks.
+2. Calculate the mean increase in weight for each subset of surviving chicks depending on their diet.
+3. Produce box plots of increases in weight for the surviving chicks on each diet (i.e. four box plots side by side)
+4. Find the first recorded time that each surviving chick weighed more than 130g and produce a histogram of these times. (Remove from the analysis any chicks that didn’t ever make this weight)
+5. Produce a line plot which shows the weight of each chick against time. Colour the lines differently depending on the diet of each chick.
+6. Calculate an average growth curve for each diet (i.e. calculate the average of the weights of each chick at each time point) and produce a single plot showing the four average growth curves.
+
+
+::: {.callout-tip collapse="true"}
+## Answer
+::: {.panel-tabset group="language"}
+## R
+
+1. mean increase in weight surviving chicks
+
+```{r}
+survived_chicks %>% 
+  group_by(chick_id) %>% 
+  summarise(mean_weight_increase =
+              mean(max(weight - min(weight)))) %>% 
+  ungroup()
+```
+
+2. mean weight increase surviving chick by diet
+
+```{r}
+survived_chicks %>% 
+  group_by(chick_id, diet) %>% 
+  # get average weight increase by chick
+  summarise(mean_weight_increase =
+              mean(max(weight - min(weight)))) %>% 
+  # group by data
+  group_by(diet) %>% 
+  # calculate the average increase across the diets
+  summarise(increase_by_diet = mean(mean_weight_increase)) %>% 
+  ungroup()
+```
+
+3. box plots of increases in weight for the surviving chicks on each diet (i.e. four box plots side by side)
+
+There are multiple ways of doing this, but I'm using the pipe here to start with the original survived chicks data and work from there. Note that the `diet` column is actually numerical, so to plot the diets as a group, we need to either specify the grouping in `ggplot()` with `group = diet` or convert the x-values to a factor with `x = factor(diet)`
+
+```{r}
+survived_chicks %>% 
+  group_by(chick_id, diet) %>% 
+  # get average weight increase by chick
+  summarise(mean_weight_increase =
+              mean(max(weight - min(weight)))) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = diet, y = mean_weight_increase,
+             group = diet)) +
+  geom_boxplot()
+```
+
+4. Find the first recorded time that each surviving chick weighed more than 130g and produce a histogram of these times. (Remove from the analysis any chicks that didn’t ever make this weight)
+
+Again, there are multiple ways of doing this, but here we go:
+
+```{r}
+survived_chicks %>% 
+  # perform these next steps on a
+  # chick-by-chick basis
+  group_by(chick_id) %>%
+  # filter out the data where
+  # weight > 130
+  filter(weight > 130) %>% 
+  # arrange by day, so that the first day
+  # where weight > 130 is on top
+  arrange(day) %>% 
+  # slice the data so only the first
+  # value per chick_id is kept
+  slice(1) %>% 
+  ungroup() %>% 
+  # plot our data
+  ggplot(aes(x = day)) +
+  # change the binwidth to 1, so
+  # we get the counts per day
+  geom_histogram(binwidth = 1)
+```
+
+5.	line plot of `weight` over time for each chick, coloured by `diet`
+
+```{r}
+ggplot(survived_chicks,
+       aes(x = day, y = weight, colour = factor(diet))) +
+  geom_line(aes(group = chick_id))
+```
+
+6. average growth curve for each diet
+
+```{r}
+survived_chicks %>% 
+  mutate(diet = factor(diet)) %>% 
+  group_by(diet, day) %>% 
+  summarise(mean_weight = mean(weight)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = day, y = mean_weight,
+             colour = diet, group = diet)) +
+  geom_line()
+```
+
+## Python
+:::
+:::
+
+## Exercise: data manipulation
+
+Sometimes it's useful to save some of these operations into a new data frame. To practice this, we are going to do the following:
+
+Construct a data frame with 6 columns and write it to a text file.
+
+1. The first column should contain the original times.
+2. The second column should contain the mean weights of all of the chicks on all diets (who survived). 
+3. The third through sixth columns should contain average weights of the chick on each diet.
+
+::: {.callout-tip collapse="true"}
+## Answer
+::: {.panel-tabset group="language"}
+## R
+
+There are different ways of approaching this. Here I am calculating the average weight for each time point. Then I calculate the average weight per diet. Lastly, I combine that information.
+
+```{r}
+weight_per_day <- survived_chicks %>% 
+  group_by(day) %>% 
+  summarise(mean_weight = mean(weight)) %>% 
+  ungroup()
+
+head(weight_per_day)
+```
+
+```{r}
+weight_per_diet <- survived_chicks %>% 
+  group_by(day, diet) %>% 
+  summarise(mean_weight = mean(weight)) %>% 
+  ungroup()
+
+head(weight_per_diet)
+```
+
+We need to pivot the `weight_per_diet` values. We also add a prefix to the names, with `names_prefix = "diet_"`, so that our column names do not contain just a number.
+
+```{r}
+weight_per_diet_wide <- weight_per_diet %>% 
+  pivot_wider(names_from = diet,
+              values_from = mean_weight,
+              names_prefix = "diet_")
+
+head(weight_per_diet_wide)
+```
+
+That works, so now we can combine this, for example through a join:
+
+```{r}
+combined_weights <- left_join(weight_per_diet_wide, weight_per_day, by = "day")
+
+head(combined_weights)
+```
+
+We can write that to file, if we wanted to:
+
+```{r}
+#| eval: false
+write_csv(combined_weights, file = "data/combined_weights.csv")
+```
+
+
+## Python
+:::
+:::
+
+## Key points
+
+::: {.callout-note}
+
+- We can use `for` loops to reiterate over a process
+- We can create our own functions to perform a common set of operations
+- Combining data allows us to explore trends in data sets and look for patterns 
+
+:::

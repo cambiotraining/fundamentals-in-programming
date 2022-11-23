@@ -1,0 +1,141 @@
+---
+title: "Loops"
+---
+
+```{r}
+#| echo: false
+#| message: false
+#| results: hide
+source(file = "setup-files/setup.R")
+```
+
+```{python}
+#| echo: false
+#| message: false
+import shutup;shutup.please()
+exec(open('setup-files/setup.py').read())
+```
+
+::: {.callout-tip}
+## Learning outcomes
+
+**Questions**
+
+-
+-
+
+**Objectives**
+
+-
+-
+-
+:::
+
+## Libraries and functions
+
+::: {.callout-note collapse="true"}
+## Click to expand
+
+::: {.panel-tabset group="language"}
+## R
+
+### Libraries
+### Functions
+
+## Python
+
+### Libraries
+### Functions
+:::
+:::
+
+## Overview
+
+One of the most powerful aspects of computers is their ability to perform tasks repetitively, very quickly. Looping is a key concept in getting a computer to perform a task multiple times. There are two key types of loops:
+
+1. The “For” loop – this repeats a task a fixed number of times
+2. The “While” loop – this repeats a task until a certain condition is met (which
+may be never if we don’t write the code correctly, in which case the task will be repeated forever!)
+
+These processes are fundamental to all computing and lie at the heart of a lot of functions that we have already used. Most of the time we won’t need to explicitly call upon them, as we can use higher level functions like filter or group_by to do what we want, but sometimes we will need to invoke these principles in order to get the job done.
+
+
+This practical is focussed on showing you code for a range of canonical examples and asking you to try to work out what should happen before you run the code. The aim is to give you an opportunity to cement your understanding of how loops work in principle rather going through explicit examples of how you can use them (although we will do at least one of these).
+
+
+## For-loop basics
+
+The fundamental structure of a for loop is based on the following syntax:
+
+::: {.panel-tabset group="language"}
+## R
+
+```{r}
+#| eval: false
+for(i in i_val){
+  #code to execute
+}
+```
+
+* The `for` loop begins with the word for
+* Immediately after for are some bracket `()`
+* Within these brackets is a loop variable (here called `i` but it could be called
+whatever you want), the word `in`, and then a loop vector (here called `i_val`)
+* This is followed by a curly bracket `{`
+* We then have some lines of code where you can put whatever you want. This
+is called the body of the loop
+* We finish off with another curly bracket to match the one before `}`
+
+## Python
+:::
+
+Loops work by letting the loop variable take every value in the loop vector in turn. Every time it takes a value in the loop variable the code in the loop body is run. Once we have reached the last value in the loop vector we exit the loop and go on with the next line in the code.
+
+### Example - basic concept
+
+::: {.panel-tabset group="language"}
+## R
+
+```{r}
+#| eval: false
+for(i in 1:10){
+  print(i)
+}
+```
+
+Here the loop variable is i
+• The loop vector is the integer values 1, 2, 3, 4, ..., 10
+• When this is run the program will enter the loop and the variable `i` will be
+assigned the first value in the loop vector, so in this case `i` will be 1
+• The program will then execute the main body of the loop with `i` having the
+value 1, so in this case it will print 1 to the screen.
+• Once the program gets to the bottom of the main body of the loop it goes back
+to the top and changes the loop variable to the next value in the loop vector,
+in this case i now takes the value 2.
+• We go back into the loop body and re-execute the code, but using the new
+value of the loop variable.
+• We keep on repeating this process until the loop variable has taken every
+single value in the loop vector. So in this case we will repeat the loop 10
+times, with i taking each of the values from 1 to 10 in turn
+• The program then leaves the loop
+
+## Python
+:::
+
+## Exercise
+
+::: {.callout-tip collapse="true"}
+## Answer
+::: {.panel-tabset group="language"}
+## R
+## Python
+:::
+:::
+
+## Key points
+
+::: {.callout-note}
+-
+-
+-
+:::

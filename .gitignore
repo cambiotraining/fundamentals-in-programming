@@ -3,3 +3,9 @@
 .RData
 .Ruserdata
 .DS_Store
+/.quarto/
+/_site/
+.icloud
+/.ipynb_checkpoints/
+/__pycache__/
+/materials/data/
